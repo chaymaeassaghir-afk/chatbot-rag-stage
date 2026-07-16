@@ -22,3 +22,7 @@ app.include_router(auth.router)
 
 from app.routers import chat
 app.include_router(chat.router)
+
+@app.get("/")
+def root():
+    return {"message": "API du projet RAG en cours d'exécution"}
