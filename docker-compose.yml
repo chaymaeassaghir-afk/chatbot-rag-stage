@@ -27,21 +27,10 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage  
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:26.2
-    container_name: keycloak
-    environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin123
-    command: start-dev
-    ports:
-      - "8081:8080"
-    restart: unless-stopped 
-    volumes:
-    - keycloak_data:/opt/keycloak/data 
+  
 
   open-webui:
-    image: ghcr.io/open-webui/open-webui:main
+    image: ghcr.io/open-webui/open-webui:v0.6.18
     container_name: open-webui
 
     ports:
@@ -51,26 +40,80 @@ services:
       ENABLE_LOGIN_FORM: "false"
       ENABLE_OAUTH_SIGNUP: "true"
 
-      OAUTH_PROVIDER_NAME: Keycloak
+      WEBUI_URL: "http://localhost:3000"
 
-      OPENID_PROVIDER_URL: http://keycloak:8080/realms/rag-stage/.well-known/openid-configuration
+      OAUTH_PROVIDER_NAME: "Keycloak"
 
-      OAUTH_CLIENT_ID: open-webui
-      OAUTH_CLIENT_SECRET: TON_NOUVEAU_SECRET
+      OAUTH_CLIENT_ID: "open-webui"
+      OAUTH_CLIENT_SECRET: "pdWqbiOxEvlAyyQilSYsL3Lz9kr4hoLj"
 
-      OAUTH_SCOPES: openid profile email
+      OPENID_PROVIDER_URL: "http://keycloak.local:8080/realms/rag-stage/.well-known/openid-configuration"
 
-      OAUTH_REDIRECT_URI: http://localhost:3000/oauth/oidc/callback
-
-      WEBUI_SECRET_KEY: une-cle-secrete
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      
 
     volumes:
-      - open_webui_data:/app/backend/data
+    - open_webui_data:/app/backend/data  
 
     restart: unless-stopped
+    depends_on:
+      - keycloak
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio-rag
+
+    command: server /data --console-address ":9001"
+
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password123
+
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+    volumes:
+      - minio_data:/data  
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: keycloak
+
+    command: start-dev
+
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: password
+
+      KC_HOSTNAME: keycloak.local
+      KC_HOSTNAME_PORT: 8080
+      KC_HOSTNAME_STRICT: "false"
+    ports:
+      - "8080:8080"
+
+    networks:
+      default:
+        aliases:
+          - keycloak.local  
+
+    depends_on:
+      - postgres
+
+    restart: unless-stopped
+
+    volumes:
+      - keycloak_data:/opt/keycloak/data    
 
 volumes:
   postgres_data:
   qdrant_data:
   keycloak_data:
   open_webui_data:
+  minio_data:
