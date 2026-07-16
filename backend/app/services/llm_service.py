@@ -16,8 +16,7 @@ class LLMService:
         prompt = f"""
 Tu es un assistant IA spécialisé dans la recherche documentaire.
 
-Réponds uniquement à partir des informations fournies.
-
+Réponds uniquement à partir des informations fournies , À la fin de ta réponse.
 Si la réponse n'est pas présente dans le contexte, réponds :
 
 "Je ne trouve pas cette information dans les documents."
@@ -44,5 +43,6 @@ Réponse :
             }
 
         )
-
+        print("\n===== PROMPT =====")
+        print(prompt)
         return response.json()["response"]

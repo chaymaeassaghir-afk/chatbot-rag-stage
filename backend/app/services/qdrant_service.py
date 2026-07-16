@@ -9,6 +9,11 @@ from qdrant_client.models import (
     VectorParams,
     PointStruct
 )
+from qdrant_client.models import (
+    Filter,
+    FieldCondition,
+    MatchValue
+)
 
 class QdrantService:
 
@@ -87,3 +92,19 @@ class QdrantService:
         )
 
         return results.points   
+
+    def delete_document(self, document_id: int):
+
+        self.client.delete(
+            collection_name=self.collection_name,
+            points_selector=Filter(
+                must=[
+                    FieldCondition(
+                        key="document_id",
+                        match=MatchValue(value=document_id)
+                    )
+                ]
+            )
+        )
+
+        print("Embeddings supprimés de Qdrant.")        

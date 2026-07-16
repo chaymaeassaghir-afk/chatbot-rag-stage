@@ -1,31 +1,37 @@
 import requests
-import jwt
-
-from jwt import PyJWKClient
-
-from app.config_keycloak import (
-    JWKS_URL,
-    ISSUER
-)
+from functools import lru_cache
 
 
 class KeycloakService:
 
-    jwk_client = PyJWKClient(JWKS_URL)
+    def __init__(self):
 
-    @staticmethod
-    def verify_token(token: str):
+        self.server = "http://localhost:8080"
+        self.realm = "rag-stage"
 
-        signing_key = KeycloakService.jwk_client.get_signing_key_from_jwt(token)
+    @property
+    def realm_url(self):
 
-        payload = jwt.decode(
-            token,
-            signing_key.key,
-            algorithms=["RS256"],
-            issuer=ISSUER,
-            options={
-                "verify_aud": False
-            }
-        )
+        return f"{self.server}/realms/{self.realm}"
 
-        return payload
+    @lru_cache(maxsize=1)
+    def get_openid_configuration(self):
+
+        url = f"{self.realm_url}/.well-known/openid-configuration"
+
+        response = requests.get(url)
+
+        response.raise_for_status()
+
+        return response.json()
+
+    @lru_cache(maxsize=1)
+    def get_public_keys(self):
+
+        config = self.get_openid_configuration()
+
+        response = requests.get(config["jwks_uri"])
+
+        response.raise_for_status()
+
+        return response.json()
