@@ -28,3 +28,21 @@ class DocumentRepository:
     def get_by_id(db: Session, document_id: int):
 
         return db.query(Document).filter(Document.id == document_id).first()
+
+    @staticmethod
+    def delete(db: Session, document_id: int):
+
+        document = (
+            db.query(Document)
+            .filter(Document.id == document_id)
+            .first()
+        )
+
+        if document is None:
+            return False
+
+        db.delete(document)
+
+        db.commit()
+
+        return True    
