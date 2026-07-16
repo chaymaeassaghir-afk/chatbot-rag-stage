@@ -10,7 +10,7 @@ from app.services.user_service import UserService
 from app.schemas.user import UserLogin
 from app.schemas.user import Token
 from fastapi import HTTPException
-from app.services.jwt_service import JWTService
+from app.dependencies.auth import require_keycloak_user
 
 router = APIRouter(
     prefix="/auth",
@@ -72,6 +72,9 @@ def users(
     return UserService.list_users(db)
 
 
+@router.get("/me")
+def me(user=Depends(require_keycloak_user)):
 
+    return user
 
 
